@@ -1,0 +1,9 @@
+Flask
+gunicorn
+google-cloud-storage
+google-generativeai
+pillow
+numpy
+tensorflow==2.15.0
+keras==2.15.0
+python-dotenv
