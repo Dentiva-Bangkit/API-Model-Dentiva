@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, jsonify
 from keras.models import load_model
 import numpy as np
 import tensorflow as tf
@@ -19,7 +19,7 @@ genai.configure(api_key= os.getenv('GEMINI_API'))
 model = genai.GenerativeModel('gemini-pro')
 chat = model.start_chat(enable_automatic_function_calling=True)
 storage_client = storage.Client()
-image_bucket = storage_client.get_bucket('dentiva-storage')
+image_bucket = storage_client.get_bucket(os.getenv('BUCKET_NAME'))
 
 def req(y_true, y_pred):
     req = tf.metrics.req(y_true, y_pred)[1]
@@ -130,6 +130,34 @@ def predictAndSuggestion():
                 response = jsonify({'message': f'Error processing image file: {str(e)}'})
                 response.status_code = 500
                 return response
+            
+@app.route('/predict', methods=['GET','POST'])
+def predict():
+    if 'file' not in request.files:
+        return render_template('upload.html', result={'message': 'No file part in the request'})
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return render_template('upload.html', result={'message': 'No selected file'})
+
+    if file:
+        try:
+            img_bytes = file.read()
+            img_file = BytesIO(img_bytes)
+            preds = predict_image(img_file)
+            confidence = np.max(preds) * 100
+            result = {
+                'tingkat_akurat': f'{confidence:.2f}%',
+                'jenis_penyakit': label_names[np.argmax(preds)],
+                'saran': chat.send_message(f'Berikan saya saran serta cara penanganan penyakit {label_names[np.argmax(preds)]}').text
+            }
+            
+            # Render template with result
+            return render_template('upload.html', result=result)
+        except Exception as e:
+            return render_template('upload.html', result={'message': f'Error processing image file: {str(e)}'})
+
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=(os.environ.get("PORT",8080)))
+    app.run(debug=True)
