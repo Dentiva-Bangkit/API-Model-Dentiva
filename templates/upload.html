@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Image</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='upload.css') }}"
+    />
+  </head>
+  <body>
+    <div class="box-center">
+      <h1>Upload Your Mouth Image</h1>
+      <form
+        action="/predict"
+        method="post"
+        enctype="multipart/form-data"
+        class="upload-form"
+      >
+        <input
+          type="file"
+          name="file"
+          accept="image/*"
+          onchange="previewImage(event)"
+        />
+        <input type="submit" value="Upload" />
+      </form>
+      <div id="image-preview" class="hidden">
+        <h2>Preview:</h2>
+        <img id="preview" src="#" alt="Preview Image" />
+      </div>
+      {% if result %}
+      <h2>Prediction Result:</h2>
+      <p>Tingkat Akurasi: {{ result.tingkat_akurat }}</p>
+      <p>Jenis Penyakit: {{ result.jenis_penyakit }}</p>
+      {% endif %}
+    </div>
+
+    <script>
+      function previewImage(event) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          var preview = document.getElementById("preview");
+          preview.src = reader.result;
+          document.getElementById("image-preview").classList.remove("hidden");
+        };
+        reader.readAsDataURL(event.target.files[0]);
+      }
+    </script>
+  </body>
+</html>
